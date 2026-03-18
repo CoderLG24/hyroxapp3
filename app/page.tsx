@@ -15,7 +15,7 @@ import { calculateDailyPoints } from "@/lib/scoring";
 export default function HomePage() {
   const {
     athleteId,
-    focusDate,
+    currentDate,
     todayWorkout,
     partnerWorkout,
     completion,
@@ -43,7 +43,7 @@ export default function HomePage() {
   return (
     <AppShell
       eyebrow="Premium Hyrox system"
-      title={`${athleteId === "lawton" ? "Lawton" : "Katy"}'s dashboard for ${format(new Date(`${focusDate}T12:00:00Z`), "MMMM d, yyyy")}`}
+      title={`${athleteId === "lawton" ? "Lawton" : "Katy"}'s dashboard for ${format(new Date(`${currentDate}T12:00:00Z`), "MMMM d, yyyy")}`}
     >
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
         <div className="grid gap-6">

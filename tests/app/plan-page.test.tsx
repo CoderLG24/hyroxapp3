@@ -14,6 +14,7 @@ vi.mock("@/components/layout/app-shell", () => ({
 
 vi.mock("@/lib/store", () => ({
   useAppStore: () => ({
+    currentDate: "2026-06-16",
     workouts: [
       {
         date: "2026-06-15",
@@ -49,8 +50,7 @@ vi.mock("@/lib/store", () => ({
         isRestDay: true
       }
     ],
-    focusDate: "2026-06-16",
-    setFocusDate: vi.fn()
+    focusDate: "2026-06-16"
   })
 }));
 

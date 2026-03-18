@@ -5,6 +5,7 @@ import {
   applyTemplate,
   asTemplate,
   buildCycleClassDay,
+  buildHyroxCs4ClassDay,
   buildLawtonLowerStrengthRunDay,
   buildRaceDay,
   buildRestDay,
@@ -44,6 +45,10 @@ function restTemplate(athleteId: AthleteId) {
 
 function cycleTemplate(description?: string) {
   return templateFromWorkout(buildCycleClassDay("2026-01-01", "katy", description));
+}
+
+function hyroxCs4Template(athleteId: AthleteId) {
+  return templateFromWorkout(buildHyroxCs4ClassDay("2026-01-01", athleteId));
 }
 
 function lawtonLowerTemplate(config: Omit<Parameters<typeof buildLawtonLowerStrengthRunDay>[0], "date" | "athleteId">) {
@@ -375,6 +380,7 @@ function katyDeadliftCarry(deadliftSets: number, deadliftReps: string, carrySets
 
 function lawtonWeek(week: number): WeekSchedule {
   const rest = restTemplate("lawton");
+  const sundayClass = hyroxCs4Template("lawton");
 
   if (week <= 4) {
     const lowerConfigs = [
@@ -406,7 +412,7 @@ function lawtonWeek(week: number): WeekSchedule {
       thursday: lawtonLowerTempo(week === 4 ? 3 : 5, "5", week === 4 ? 3 : 4, week === 4 ? "5" : "6", week === 4 ? 2 : 3, "8/leg", thursdayRuns[index]),
       friday: rest,
       saturday: lawtonCarryDay(saturdayConfigs[index][0], saturdayConfigs[index][1], saturdayConfigs[index][2], saturdayConfigs[index][3], saturdayConfigs[index][4], saturdayConfigs[index][5], saturdayConfigs[index][6], saturdayConfigs[index][7], saturdayConfigs[index][8]),
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -435,7 +441,7 @@ function lawtonWeek(week: number): WeekSchedule {
       thursday: lawtonLowerTempo(week === 8 ? 3 : 5, "4", week === 8 ? 3 : 4, week === 8 ? "4" : "5", week === 8 ? 2 : 3, "8/leg", thursdayRuns[index]),
       friday: rest,
       saturday: lawtonCarryDay(saturdayConfigs[index][0], saturdayConfigs[index][1], saturdayConfigs[index][2], saturdayConfigs[index][3], saturdayConfigs[index][4], saturdayConfigs[index][5], saturdayConfigs[index][6], saturdayConfigs[index][7], saturdayConfigs[index][8]),
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -483,7 +489,7 @@ function lawtonWeek(week: number): WeekSchedule {
       }),
       friday: rest,
       saturday: lawtonSaturdayCircuitDay(week === 12 ? 3 : 4, "8", week === 12 ? 3 : 4, "8", saturdayRounds[index], "750 m", saturdayWallBalls[index], saturdayBurpees[index]),
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -525,7 +531,7 @@ function lawtonWeek(week: number): WeekSchedule {
       }),
       friday: rest,
       saturday: lawtonSaturdayCircuitDay(week === 16 ? 3 : 4, "8", week === 16 ? 3 : 4, "8", saturdayRounds[index], "1000 m", saturdayWallBalls[index], saturdayBurpees[index]),
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -581,7 +587,7 @@ function lawtonWeek(week: number): WeekSchedule {
       }),
       friday: rest,
       saturday: lawtonRaceSpecificSaturday(week === 22 ? 3 : 4, "1000 m", saturdayLunge[week as keyof typeof saturdayLunge], saturdayWall[week as keyof typeof saturdayWall], saturdayBurpees[week as keyof typeof saturdayBurpees]),
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -641,13 +647,14 @@ function lawtonWeek(week: number): WeekSchedule {
       ],
       cooldown: ["Walk 5 min", "Shoulder stretch", "Hip stretch", "Calf stretch"]
     }),
-    sunday: rest
+    sunday: sundayClass
   };
 }
 
 function katyWeek(week: number): WeekSchedule {
   const rest = restTemplate("katy");
   const cycle = cycleTemplate();
+  const sundayClass = hyroxCs4Template("katy");
 
   if (week <= 4) {
     const mondayConfig = [
@@ -673,7 +680,7 @@ function katyWeek(week: number): WeekSchedule {
       thursday: katyTrapBarDay(week === 4 ? 3 : 5, week === 4 ? "5" : "5", week === 4 ? 3 : 4, week === 4 ? "5" : "6", week === 4 ? 2 : 3, "8/leg", thursdayNotes),
       friday: rest,
       saturday: cycle,
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -691,7 +698,7 @@ function katyWeek(week: number): WeekSchedule {
       thursday: katyTrapBarDay(week === 8 ? 3 : 5, week === 8 ? "4" : "4", week === 8 ? 3 : 4, week === 8 ? "4" : "6", week === 8 ? 2 : 3, "8/leg", thursdayCycleNotes),
       friday: rest,
       saturday: cycle,
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -720,7 +727,7 @@ function katyWeek(week: number): WeekSchedule {
       thursday: katyPosteriorDay(week === 12 ? 3 : 4, week === 12 ? "5" : "6", week === 12 ? 2 : 3, "8", week === 12 ? 2 : 3, week === 12 ? "8/leg" : "10/leg", week === 12 ? 2 : 3, "12"),
       friday: rest,
       saturday: cycle,
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -749,7 +756,7 @@ function katyWeek(week: number): WeekSchedule {
       thursday: katyPosteriorDay(week === 16 ? 3 : 4, week === 16 ? "5" : "6", week === 16 ? 2 : 3, "8", week === 16 ? 2 : 3, week === 16 ? "8/leg" : "10/leg", week === 16 ? 2 : 3, "12"),
       friday: rest,
       saturday: cycle,
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -782,7 +789,7 @@ function katyWeek(week: number): WeekSchedule {
       thursday: katyDeadliftCarry(week === 22 ? 2 : 3, "3", week === 22 ? 3 : 4, week === 22 ? "40 m" : "50 m", week === 22 ? 2 : 3, week === 22 ? "15 m" : "20 m"),
       friday: rest,
       saturday: cycle,
-      sunday: rest
+      sunday: sundayClass
     };
   }
 
@@ -828,7 +835,7 @@ function katyWeek(week: number): WeekSchedule {
     }),
     friday: rest,
     saturday: cycle,
-    sunday: rest
+    sunday: sundayClass
   };
 }
 
@@ -893,7 +900,7 @@ function customLawtonTail(): WorkoutDay[] {
       conditioning: [],
       cooldown: ["Walk 5 min", "Calf stretch", "Hamstring stretch"]
     }),
-    templateFromWorkout(buildRestDay("2026-01-01", "lawton")),
+    hyroxCs4Template("lawton"),
     buildTemplate({
       title: "Race Pace 400s + Easy Circuit",
       type: "hyrox",
@@ -961,7 +968,7 @@ function customKatyTail(): WorkoutDay[] {
     }),
     templateFromWorkout(buildRestDay("2026-01-01", "katy")),
     cycleTemplate(),
-    templateFromWorkout(buildRestDay("2026-01-01", "katy")),
+    hyroxCs4Template("katy"),
     buildTemplate({
       title: "Race Pace 400s + Easy Circuit",
       type: "hyrox",

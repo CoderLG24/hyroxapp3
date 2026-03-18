@@ -57,8 +57,7 @@ const defaultState: PersistedState = {
 interface AppStoreValue {
   athleteId: AthleteId;
   setAthleteId: (athleteId: AthleteId) => void;
-  focusDate: string;
-  setFocusDate: (date: string) => void;
+  currentDate: string;
   todayWorkout: ReturnType<typeof getWorkoutForDate>;
   partnerWorkout: ReturnType<typeof getWorkoutForDate>;
   completion: DailyCompletion;
@@ -98,7 +97,7 @@ function getCompletionFromState(completions: PersistedState["completions"], athl
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(defaultState);
-  const [focusDate, setFocusDate] = useState(getPlanFocusDate());
+  const currentDate = getPlanFocusDate();
 
   useEffect(() => {
     setState(loadState(defaultState));
@@ -111,10 +110,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const athleteId = state.preferredAthlete;
   const partnerId: AthleteId = athleteId === "lawton" ? "katy" : "lawton";
 
-  const todayWorkout = getWorkoutForDate(athleteId, focusDate);
-  const partnerWorkout = getWorkoutForDate(partnerId, focusDate);
-  const completion = getCompletionFromState(state.completions, athleteId, focusDate);
-  const partnerCompletion = getCompletionFromState(state.completions, partnerId, focusDate);
+  const todayWorkout = getWorkoutForDate(athleteId, currentDate);
+  const partnerWorkout = getWorkoutForDate(partnerId, currentDate);
+  const completion = getCompletionFromState(state.completions, athleteId, currentDate);
+  const partnerCompletion = getCompletionFromState(state.completions, partnerId, currentDate);
 
   const allCompletions = useMemo(() => Object.values(state.completions), [state.completions]);
   const athleteCompletions = allCompletions.filter((entry) => entry.athleteId === athleteId);
@@ -132,7 +131,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const countdownDays = getRaceCountdown();
 
   const weeklyWindow = workoutsByAthlete[athleteId]
-    .filter((workout) => workout.date <= focusDate)
+    .filter((workout) => workout.date <= currentDate)
     .slice(-7)
     .map((workout) => getCompletionFromState(state.completions, athleteId, workout.date));
 
@@ -143,13 +142,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       athleteId,
       setAthleteId: (nextAthleteId) => setState((current) => ({ ...current, preferredAthlete: nextAthleteId })),
-      focusDate,
-      setFocusDate,
+      currentDate,
       todayWorkout,
       partnerWorkout,
       completion,
       partnerCompletion,
-      toggleGoal: (goal, targetAthlete = athleteId, targetDate = focusDate) => {
+      toggleGoal: (goal, targetAthlete = athleteId, targetDate = currentDate) => {
         setState((current) => {
           const key = getStorageKey(targetDate, targetAthlete);
           const existing = current.completions[key];
@@ -170,7 +168,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           };
         });
       },
-      updateCompletionMeta: (patch, targetAthlete = athleteId, targetDate = focusDate) => {
+      updateCompletionMeta: (patch, targetAthlete = athleteId, targetDate = currentDate) => {
         setState((current) => {
           const key = getStorageKey(targetDate, targetAthlete);
           const existing = current.completions[key];
@@ -236,7 +234,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           }
         }));
       },
-      cycleStatus: getCycleStatusForDate(focusDate),
+      cycleStatus: getCycleStatusForDate(currentDate),
       countdownDays,
       workouts: workoutsByAthlete[athleteId],
       partnerWorkouts: workoutsByAthlete[partnerId],
@@ -246,7 +244,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       athleteId,
       completion,
       countdownDays,
-      focusDate,
+      currentDate,
       partnerCompletion,
       partnerId,
       partnerPoints,

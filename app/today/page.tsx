@@ -1,5 +1,7 @@
 "use client";
 
+import { format } from "date-fns";
+
 import { AppShell } from "@/components/layout/app-shell";
 import { ChecklistCard } from "@/components/training/checklist-card";
 import { WorkoutDetails } from "@/components/training/workout-details";
@@ -7,12 +9,21 @@ import { Panel } from "@/components/ui/panel";
 import { useAppStore } from "@/lib/store";
 
 export default function TodayPage() {
-  const { completion, cycleStatus, updateCompletionMeta, athleteId } = useAppStore();
+  const { completion, cycleStatus, updateCompletionMeta, athleteId, currentDate, todayWorkout } = useAppStore();
 
   return (
     <AppShell eyebrow="Execution mode" title="Today's mission">
       <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
         <div className="grid gap-6">
+          <Panel className="p-5 sm:p-6">
+            <p className="text-xs uppercase tracking-[0.28em] text-sky-200/60">Today</p>
+            <h2 className="mt-2 text-3xl font-semibold text-white">
+              {format(new Date(`${currentDate}T12:00:00Z`), "MMMM d, yyyy")}
+            </h2>
+            <p className="mt-3 text-sm text-slate-300">
+              Scheduled workout: <span className="font-medium text-white">{todayWorkout.title}</span>
+            </p>
+          </Panel>
           <WorkoutDetails />
           <ChecklistCard />
         </div>

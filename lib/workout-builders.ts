@@ -88,6 +88,40 @@ export function buildCycleClassDay(date: string, athleteId: AthleteId, descripti
   };
 }
 
+export function buildHyroxCs4ClassDay(date: string, athleteId: AthleteId): WorkoutDay {
+  return {
+    date,
+    athleteId,
+    title: "Hyrox CS4 Class",
+    type: "hyrox",
+    description: "Coach-led Hyrox class used as the assigned Sunday workout with structured run and station work.",
+    warmup: [
+      "5 min easy jog or row",
+      "Leg swing x 10/side",
+      "Walking lunge x 10 total",
+      "Band pull-apart x 15",
+      "1 build round at 50% effort"
+    ],
+    mainWork: [
+      {
+        name: "Hyrox CS4 Class",
+        duration: "60 min",
+        notes:
+          "Coach-led session including 1 km run repeats, SkiErg and row intervals, sled push and pull work, burpee broad jumps, sandbag lunges, and wall balls with structured recovery."
+      }
+    ],
+    conditioning: [
+      {
+        name: "Finisher",
+        reps: "2 rounds",
+        notes: "Farmer carry 40 m; wall balls 15; rest 60 sec between rounds"
+      }
+    ],
+    cooldown: ["5 min easy walk", "Calf stretch", "Hip flexor stretch", "Thoracic opener"],
+    isRestDay: false
+  };
+}
+
 export function buildRaceDay(date: string, athleteId: AthleteId): WorkoutDay {
   return {
     date,

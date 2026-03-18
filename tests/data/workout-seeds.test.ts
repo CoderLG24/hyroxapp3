@@ -36,6 +36,31 @@ describe("workout seeds", () => {
     ).toBe(true);
   });
 
+  it("assigns Hyrox CS4 Class every Sunday for both athletes", () => {
+    const lawtonSundays = lawtonWorkouts.filter((workout) => new Date(workout.date).getUTCDay() === 0);
+    const katySundays = katyWorkouts.filter((workout) => new Date(workout.date).getUTCDay() === 0);
+
+    expect(lawtonSundays.length).toBeGreaterThan(0);
+    expect(katySundays.length).toBeGreaterThan(0);
+
+    expect(
+      lawtonSundays.every(
+        (workout) =>
+          workout.title === "Hyrox CS4 Class" &&
+          workout.type === "hyrox" &&
+          workout.isRestDay === false
+      )
+    ).toBe(true);
+    expect(
+      katySundays.every(
+        (workout) =>
+          workout.title === "Hyrox CS4 Class" &&
+          workout.type === "hyrox" &&
+          workout.isRestDay === false
+      )
+    ).toBe(true);
+  });
+
   it("keeps Katy on cycle class every Wednesday and Saturday except explicit taper flexibility messaging", () => {
     const katyCycleDays = katyWorkouts.filter((workout) => {
       const day = new Date(workout.date).getUTCDay();
