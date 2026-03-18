@@ -44,13 +44,13 @@ export default function PlanPage() {
   const activeWeek = weeks[focusedWeekIndex] ?? [];
 
   function handleSelectDate(date: string) {
-    setSelectedDate(date);
-
     const weekIndex = weeks.findIndex((week) => week.some((day) => day.date === date));
 
     if (weekIndex >= 0) {
       setExpandedWeeks((current) => Array.from(new Set([...current, weekIndex])));
     }
+
+    setSelectedDate((current) => (current === date ? "" : date));
   }
 
   function handleJumpToCurrentWeek() {

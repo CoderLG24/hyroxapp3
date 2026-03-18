@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, isAfter, isBefore } from "date-fns";
+import { differenceInCalendarDays, format, isAfter, isBefore } from "date-fns";
 
 const planStart = new Date("2026-03-16T12:00:00Z");
 const planEnd = new Date("2026-09-18T12:00:00Z");
@@ -13,7 +13,7 @@ export function getPlanFocusDate(now = new Date()) {
     return "2026-09-18";
   }
 
-  return now.toISOString().slice(0, 10);
+  return format(now, "yyyy-MM-dd");
 }
 
 export function getRaceCountdown(now = new Date()) {

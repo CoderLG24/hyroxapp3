@@ -55,15 +55,22 @@ vi.mock("@/lib/store", () => ({
 }));
 
 describe("PlanPage", () => {
-  it("anchors the plan around the focused date and supports inline workout expansion", () => {
+  it("anchors the plan around the focused date and lets a day card expand and collapse inline", () => {
     render(<PlanPage />);
 
     expect(screen.getByText(/jump to current week/i)).toBeInTheDocument();
     expect(screen.getAllByText(/focused week/i).length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getAllByRole("button", { name: /2026-06-15/i })[1]);
+    const dayButton = screen.getAllByRole("button", { name: /2026-06-15/i })[1];
+
+    fireEvent.click(dayButton);
 
     expect(screen.getByText(/warmup/i)).toBeInTheDocument();
     expect(screen.getByText(/bench press/i)).toBeInTheDocument();
+
+    fireEvent.click(dayButton);
+
+    expect(screen.queryByText(/warmup/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/bench press/i)).not.toBeInTheDocument();
   });
 });
