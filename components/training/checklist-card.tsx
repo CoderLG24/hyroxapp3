@@ -31,11 +31,21 @@ export function ChecklistCard() {
               key={goal.key}
               type="button"
               onClick={() => toggleGoal(goal.key)}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: index * 0.05 }}
+              initial={false}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: checked ? 1.01 : 1
+              }}
+              whileTap={{ scale: 0.985 }}
+              transition={{
+                duration: 0.18,
+                delay: index === 0 ? 0 : 0,
+                ease: "easeOut"
+              }}
+              style={{ WebkitTapHighlightColor: "transparent" }}
               className={cn(
-                "flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                "flex touch-manipulation select-none items-center gap-3 rounded-2xl border px-4 py-3 text-left transition will-change-transform",
                 checked
                   ? "border-emerald-400/30 bg-emerald-400/10 text-white"
                   : "border-white/10 bg-white/[0.03] text-slate-200 hover:border-white/20 hover:bg-white/[0.06]"
