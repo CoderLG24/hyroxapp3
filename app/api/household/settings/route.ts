@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getApiErrorPayload } from "@/lib/api-errors";
 import { getHouseholdByCredentials, upsertSettings } from "@/lib/supabase/repository";
 import type { PersistedState } from "@/lib/storage";
 
@@ -21,9 +22,6 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to save settings." },
-      { status: 500 }
-    );
+    return NextResponse.json(getApiErrorPayload(error, "Unable to save settings."), { status: 500 });
   }
 }

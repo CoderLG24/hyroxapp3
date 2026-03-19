@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getApiErrorPayload } from "@/lib/api-errors";
 import { getHouseholdByCredentials, getHouseholdSnapshot } from "@/lib/supabase/repository";
 
 export async function GET(request: Request) {
@@ -35,9 +36,6 @@ export async function GET(request: Request) {
       settings: snapshot.settings
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to load household session." },
-      { status: 500 }
-    );
+    return NextResponse.json(getApiErrorPayload(error, "Unable to load household session."), { status: 500 });
   }
 }

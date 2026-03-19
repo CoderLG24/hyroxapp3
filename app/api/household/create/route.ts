@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getApiErrorPayload } from "@/lib/api-errors";
 import { createHousehold, getHouseholdSnapshot } from "@/lib/supabase/repository";
 import type { PersistedState } from "@/lib/storage";
 
@@ -31,9 +32,6 @@ export async function POST(request: Request) {
       settings: snapshot.settings
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unable to create household." },
-      { status: 500 }
-    );
+    return NextResponse.json(getApiErrorPayload(error, "Unable to create household."), { status: 500 });
   }
 }
