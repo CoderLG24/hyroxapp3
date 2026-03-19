@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 
+import { FriendlyCompetitionCard } from "@/components/competition/friendly-competition-card";
 import { AppShell } from "@/components/layout/app-shell";
 import { PointsChart } from "@/components/progress/points-chart";
 import { RewardCard } from "@/components/rewards/reward-card";
@@ -27,6 +28,7 @@ export default function HomePage() {
     partnerPoints,
     sharedPoints,
     personalRewards,
+    friendlyCompetition,
     cycleStatus,
     countdownDays,
     workouts
@@ -76,6 +78,7 @@ export default function HomePage() {
 
           <WorkoutDetails />
           <ChecklistCard />
+          <FriendlyCompetitionCard summary={friendlyCompetition} perspective={athleteId} />
           <PointsChart data={chartData} title="Points trend" />
         </div>
 

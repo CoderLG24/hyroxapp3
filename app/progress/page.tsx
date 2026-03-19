@@ -1,5 +1,6 @@
 "use client";
 
+import { HeadToHeadPanel } from "@/components/competition/head-to-head-panel";
 import { AppShell } from "@/components/layout/app-shell";
 import { PointsChart } from "@/components/progress/points-chart";
 import { Panel } from "@/components/ui/panel";
@@ -7,7 +8,7 @@ import { useAppStore } from "@/lib/store";
 import { calculateDailyPoints } from "@/lib/scoring";
 
 export default function ProgressPage() {
-  const { workouts, completion, streak, personalPoints, sharedPoints, weeklyBonuses } = useAppStore();
+  const { workouts, completion, streak, personalPoints, sharedPoints, weeklyBonuses, friendlyCompetition } = useAppStore();
 
   const chartData = workouts.slice(0, 20).map((workout) => ({
     date: workout.date.slice(5),
@@ -19,6 +20,7 @@ export default function ProgressPage() {
       <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="grid gap-6">
           <PointsChart data={chartData} title="Points over time" />
+          <HeadToHeadPanel summary={friendlyCompetition} />
           <Panel className="p-5 sm:p-6">
             <p className="text-xs uppercase tracking-[0.28em] text-sky-200/60">Weekly consistency</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">

@@ -12,6 +12,7 @@ import {
 import { athletes } from "@/data/athletes";
 import { goalDefinitions } from "@/data/goals";
 import { rewards } from "@/data/rewards";
+import { calculateFriendlyCompetition } from "@/lib/competition";
 import { cycleSettings, getCycleStatusForDate } from "@/lib/cycle";
 import { getPlanFocusDate, getRaceCountdown } from "@/lib/dates";
 import { calculateCurrentStreak } from "@/lib/streaks";
@@ -95,6 +96,7 @@ interface AppStoreValue {
   createHousehold: (householdName?: string) => Promise<void>;
   joinHousehold: (joinCode: string) => Promise<void>;
   disconnectHousehold: () => void;
+  friendlyCompetition: ReturnType<typeof calculateFriendlyCompetition>;
   cycleStatus: ReturnType<typeof getCycleStatusForDate>;
   countdownDays: number;
   workouts: typeof lawtonWorkouts;
@@ -190,6 +192,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const streak = calculateCurrentStreak(athleteCompletions);
   const partnerStreak = calculateCurrentStreak(partnerCompletions);
+  const friendlyCompetition = calculateFriendlyCompetition(allCompletions, currentDate);
 
   const value = useMemo<AppStoreValue>(
     () => ({
@@ -388,6 +391,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setSyncStatus("local");
         setSyncError(null);
       },
+      friendlyCompetition,
       cycleStatus: getCycleStatusForDate(currentDate),
       countdownDays,
       workouts: workoutsByAthlete[athleteId],
@@ -399,6 +403,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       completion,
       countdownDays,
       currentDate,
+      friendlyCompetition,
       householdSession,
       partnerCompletion,
       partnerId,

@@ -78,6 +78,14 @@ vi.mock("@/lib/store", () => ({
     partnerPoints: 0,
     sharedPoints: 0,
     personalRewards: [],
+    friendlyCompetition: {
+      weekLabel: "Mar 16 - Mar 22",
+      lawton: { athleteId: "lawton", points: 0, workouts: 0, perfectDays: 0, proteinDays: 0, stepDays: 0, streak: 0 },
+      katy: { athleteId: "katy", points: 0, workouts: 0, perfectDays: 0, proteinDays: 0, stepDays: 0, streak: 0 },
+      categories: [],
+      leadCount: { lawton: 0, katy: 0 },
+      momentumMessage: "Neck and neck."
+    },
     cycleStatus: {
       cycleDay: 5,
       status: "green",
