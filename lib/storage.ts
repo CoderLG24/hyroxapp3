@@ -1,4 +1,10 @@
-import type { AthleteId, DailyCompletion, RewardRedemption, ReadinessStatus } from "@/lib/types";
+import type {
+  AthleteId,
+  DailyCompletion,
+  HouseholdSession,
+  RewardRedemption,
+  ReadinessStatus
+} from "@/lib/types";
 
 export interface AppSettings {
   proteinTargets: Record<AthleteId, number>;
@@ -15,6 +21,7 @@ export interface PersistedState {
   completions: Record<string, DailyCompletion>;
   redemptions: RewardRedemption[];
   settings: AppSettings;
+  householdSession?: HouseholdSession | null;
 }
 
 const STORAGE_KEY = "hyrox-couple-v1";
@@ -60,7 +67,8 @@ export function loadState(fallback: PersistedState): PersistedState {
       preferredAthlete: parsed.preferredAthlete ?? fallback.preferredAthlete,
       completions: parsed.completions ?? fallback.completions,
       redemptions: parsed.redemptions ?? fallback.redemptions,
-      settings: parsed.settings ?? fallback.settings
+      settings: parsed.settings ?? fallback.settings,
+      householdSession: parsed.householdSession ?? fallback.householdSession ?? null
     };
   } catch {
     return fallback;

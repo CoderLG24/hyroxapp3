@@ -79,3 +79,9 @@ export interface RewardRedemption {
   redeemedOn: string;
   cost: number;
 }
+
+export interface HouseholdSession {
+  householdId: string;
+  householdName: string;
+  joinCode: string;
+}

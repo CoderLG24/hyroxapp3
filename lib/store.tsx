@@ -23,8 +23,16 @@ import {
   saveState,
   type PersistedState
 } from "@/lib/storage";
+import {
+  createHouseholdRequest,
+  createRewardRedemptionRequest,
+  fetchHouseholdSnapshot,
+  joinHouseholdRequest,
+  saveCompletionRequest,
+  saveSettingsRequest
+} from "@/lib/sync-client";
 import { calculateDailyPoints, calculateSharedPoints, calculateWeeklyBonuses } from "@/lib/scoring";
-import type { AthleteId, DailyCompletion, GoalKey, Reward, RewardRedemption } from "@/lib/types";
+import type { AthleteId, DailyCompletion, GoalKey, HouseholdSession, Reward, RewardRedemption } from "@/lib/types";
 import { katyWorkouts } from "@/data/workouts-katy";
 import { lawtonWorkouts } from "@/data/workouts-lawton";
 
@@ -51,8 +59,11 @@ const defaultState: PersistedState = {
       katy: athletes.find((athlete) => athlete.id === "katy")?.stepTarget ?? 10000
     },
     cycle: cycleSettings
-  }
+  },
+  householdSession: null
 };
+
+type SyncStatus = "local" | "syncing" | "shared" | "error";
 
 interface AppStoreValue {
   athleteId: AthleteId;
@@ -78,6 +89,12 @@ interface AppStoreValue {
   redeemReward: (reward: Reward) => void;
   settings: PersistedState["settings"];
   updateSetting: (kind: "proteinTargets" | "hydrationTargets" | "stepTargets", athleteId: AthleteId, value: number) => void;
+  householdSession: HouseholdSession | null;
+  syncStatus: SyncStatus;
+  syncError: string | null;
+  createHousehold: (householdName?: string) => Promise<void>;
+  joinHousehold: (joinCode: string) => Promise<void>;
+  disconnectHousehold: () => void;
   cycleStatus: ReturnType<typeof getCycleStatusForDate>;
   countdownDays: number;
   workouts: typeof lawtonWorkouts;
@@ -97,11 +114,47 @@ function getCompletionFromState(completions: PersistedState["completions"], athl
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(defaultState);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("local");
+  const [syncError, setSyncError] = useState<string | null>(null);
   const currentDate = getPlanFocusDate();
+  const householdSession = state.householdSession ?? null;
 
   useEffect(() => {
     setState(loadState(defaultState));
   }, []);
+
+  useEffect(() => {
+    async function hydrateRemoteState() {
+      if (!householdSession) {
+        setSyncStatus("local");
+        setSyncError(null);
+        return;
+      }
+
+      try {
+        setSyncStatus("syncing");
+        setSyncError(null);
+        const snapshot = await fetchHouseholdSnapshot({
+          householdId: householdSession.householdId,
+          joinCode: householdSession.joinCode
+        });
+
+        setState((current) => ({
+          ...current,
+          completions: snapshot.completions,
+          redemptions: snapshot.redemptions,
+          settings: snapshot.settings ?? current.settings,
+          householdSession: snapshot.household
+        }));
+        setSyncStatus("shared");
+      } catch (error) {
+        setSyncStatus("error");
+        setSyncError(error instanceof Error ? error.message : "Unable to sync household data.");
+      }
+    }
+
+    void hydrateRemoteState();
+  }, [householdSession]);
 
   useEffect(() => {
     saveState(state);
@@ -148,43 +201,67 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       completion,
       partnerCompletion,
       toggleGoal: (goal, targetAthlete = athleteId, targetDate = currentDate) => {
-        setState((current) => {
-          const key = getStorageKey(targetDate, targetAthlete);
-          const existing = current.completions[key];
-          const normalized = normalizeCompletion(existing, targetDate, targetAthlete);
+        const key = getStorageKey(targetDate, targetAthlete);
+        const existing = state.completions[key];
+        const normalized = normalizeCompletion(existing, targetDate, targetAthlete);
+        const nextCompletion = {
+          ...normalized,
+          goals: {
+            ...normalized.goals,
+            [goal]: !normalized.goals[goal]
+          }
+        };
 
+        setState((current) => {
           return {
             ...current,
             completions: {
               ...current.completions,
-              [key]: {
-                ...normalized,
-                goals: {
-                  ...normalized.goals,
-                  [goal]: !normalized.goals[goal]
-                }
-              }
+              [key]: nextCompletion
             }
           };
         });
+
+        if (householdSession) {
+          void saveCompletionRequest({
+            householdId: householdSession.householdId,
+            joinCode: householdSession.joinCode,
+            completion: nextCompletion
+          }).catch((error) => {
+            setSyncStatus("error");
+            setSyncError(error instanceof Error ? error.message : "Unable to sync completion.");
+          });
+        }
       },
       updateCompletionMeta: (patch, targetAthlete = athleteId, targetDate = currentDate) => {
-        setState((current) => {
-          const key = getStorageKey(targetDate, targetAthlete);
-          const existing = current.completions[key];
-          const normalized = normalizeCompletion(existing, targetDate, targetAthlete, patch.readinessStatus);
+        const key = getStorageKey(targetDate, targetAthlete);
+        const existing = state.completions[key];
+        const normalized = normalizeCompletion(existing, targetDate, targetAthlete, patch.readinessStatus);
+        const nextCompletion = {
+          ...normalized,
+          ...patch
+        };
 
+        setState((current) => {
           return {
             ...current,
             completions: {
               ...current.completions,
-              [key]: {
-                ...normalized,
-                ...patch
-              }
+              [key]: nextCompletion
             }
           };
         });
+
+        if (householdSession) {
+          void saveCompletionRequest({
+            householdId: householdSession.householdId,
+            joinCode: householdSession.joinCode,
+            completion: nextCompletion
+          }).catch((error) => {
+            setSyncStatus("error");
+            setSyncError(error instanceof Error ? error.message : "Unable to sync completion.");
+          });
+        }
       },
       dailyPoints: calculateDailyPoints(completion),
       partnerDailyPoints: calculateDailyPoints(partnerCompletion),
@@ -206,33 +283,110 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       sharedRewards: rewards.filter((reward) => reward.scope === "shared"),
       redemptions: state.redemptions,
       redeemReward: (reward) => {
+        const nextRedemption = {
+          id: `${reward.id}-${Date.now()}`,
+          rewardId: reward.id,
+          scope: reward.scope,
+          athleteId: reward.athleteId,
+          redeemedOn: new Date().toISOString(),
+          cost: reward.cost
+        } satisfies RewardRedemption;
+
         setState((current) => ({
           ...current,
-          redemptions: [
-            {
-              id: `${reward.id}-${Date.now()}`,
-              rewardId: reward.id,
-              scope: reward.scope,
-              athleteId: reward.athleteId,
-              redeemedOn: new Date().toISOString(),
-              cost: reward.cost
-            },
-            ...current.redemptions
-          ]
+          redemptions: [nextRedemption, ...current.redemptions]
         }));
+
+        if (householdSession) {
+          void createRewardRedemptionRequest({
+            householdId: householdSession.householdId,
+            joinCode: householdSession.joinCode,
+            redemption: nextRedemption
+          }).catch((error) => {
+            setSyncStatus("error");
+            setSyncError(error instanceof Error ? error.message : "Unable to sync redemption.");
+          });
+        }
       },
       settings: state.settings,
       updateSetting: (kind, targetAthlete, value) => {
+        const nextSettings = {
+          ...state.settings,
+          [kind]: {
+            ...state.settings[kind],
+            [targetAthlete]: value
+          }
+        };
+
         setState((current) => ({
           ...current,
-          settings: {
-            ...current.settings,
-            [kind]: {
-              ...current.settings[kind],
-              [targetAthlete]: value
-            }
-          }
+          settings: nextSettings
         }));
+
+        if (householdSession) {
+          void saveSettingsRequest({
+            householdId: householdSession.householdId,
+            joinCode: householdSession.joinCode,
+            settings: nextSettings
+          }).catch((error) => {
+            setSyncStatus("error");
+            setSyncError(error instanceof Error ? error.message : "Unable to sync settings.");
+          });
+        }
+      },
+      householdSession,
+      syncStatus,
+      syncError,
+      createHousehold: async (householdName) => {
+        setSyncStatus("syncing");
+        setSyncError(null);
+        try {
+          const snapshot = await createHouseholdRequest({
+            householdName,
+            settings: state.settings
+          });
+
+          setState((current) => ({
+            ...current,
+            completions: snapshot.completions,
+            redemptions: snapshot.redemptions,
+            settings: snapshot.settings ?? current.settings,
+            householdSession: snapshot.household
+          }));
+          setSyncStatus("shared");
+        } catch (error) {
+          setSyncStatus("error");
+          setSyncError(error instanceof Error ? error.message : "Unable to create household.");
+          throw error;
+        }
+      },
+      joinHousehold: async (joinCode) => {
+        setSyncStatus("syncing");
+        setSyncError(null);
+        try {
+          const snapshot = await joinHouseholdRequest({ joinCode });
+
+          setState((current) => ({
+            ...current,
+            completions: snapshot.completions,
+            redemptions: snapshot.redemptions,
+            settings: snapshot.settings ?? current.settings,
+            householdSession: snapshot.household
+          }));
+          setSyncStatus("shared");
+        } catch (error) {
+          setSyncStatus("error");
+          setSyncError(error instanceof Error ? error.message : "Unable to join household.");
+          throw error;
+        }
+      },
+      disconnectHousehold: () => {
+        setState((current) => ({
+          ...current,
+          householdSession: null
+        }));
+        setSyncStatus("local");
+        setSyncError(null);
       },
       cycleStatus: getCycleStatusForDate(currentDate),
       countdownDays,
@@ -245,13 +399,17 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       completion,
       countdownDays,
       currentDate,
+      householdSession,
       partnerCompletion,
       partnerId,
       partnerPoints,
       partnerStreak,
       personalPoints,
       sharedPoints,
+      syncError,
+      syncStatus,
       state.redemptions,
+      state.completions,
       state.settings,
       streak,
       todayWorkout,
