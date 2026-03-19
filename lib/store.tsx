@@ -120,6 +120,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [syncError, setSyncError] = useState<string | null>(null);
   const currentDate = getPlanFocusDate();
   const householdSession = state.householdSession ?? null;
+  const householdId = householdSession?.householdId ?? null;
+  const householdJoinCode = householdSession?.joinCode ?? null;
 
   useEffect(() => {
     setState(loadState(defaultState));
@@ -127,7 +129,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     async function hydrateRemoteState() {
-      if (!householdSession) {
+      if (!householdId || !householdJoinCode) {
         setSyncStatus("local");
         setSyncError(null);
         return;
@@ -137,8 +139,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setSyncStatus("syncing");
         setSyncError(null);
         const snapshot = await fetchHouseholdSnapshot({
-          householdId: householdSession.householdId,
-          joinCode: householdSession.joinCode
+          householdId,
+          joinCode: householdJoinCode
         });
 
         setState((current) => ({
@@ -146,7 +148,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           completions: snapshot.completions,
           redemptions: snapshot.redemptions,
           settings: snapshot.settings ?? current.settings,
-          householdSession: snapshot.household
+          householdSession:
+            current.householdSession?.householdId === snapshot.household.householdId &&
+            current.householdSession?.joinCode === snapshot.household.joinCode
+              ? current.householdSession
+              : snapshot.household
         }));
         setSyncStatus("shared");
       } catch (error) {
@@ -156,7 +162,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }
 
     void hydrateRemoteState();
-  }, [householdSession]);
+  }, [householdId, householdJoinCode]);
 
   useEffect(() => {
     saveState(state);
