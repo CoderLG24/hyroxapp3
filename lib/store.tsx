@@ -17,6 +17,7 @@ import { cycleSettings, getCycleStatusForDate } from "@/lib/cycle";
 import { getPlanFocusDate, getRaceCountdown } from "@/lib/dates";
 import { calculateCurrentStreak } from "@/lib/streaks";
 import {
+  applyProgressReset,
   createDefaultCompletion,
   getStorageKey,
   loadState,
@@ -29,6 +30,7 @@ import {
   createRewardRedemptionRequest,
   fetchHouseholdSnapshot,
   joinHouseholdRequest,
+  resetHouseholdProgressRequest,
   saveCompletionRequest,
   saveSettingsRequest
 } from "@/lib/sync-client";
@@ -41,6 +43,11 @@ const workoutsByAthlete = {
   lawton: lawtonWorkouts,
   katy: katyWorkouts
 };
+
+const progressReset = {
+  resetDate: "2026-05-02",
+  resetKey: "restart-2026-05-02"
+} as const;
 
 const defaultState: PersistedState = {
   preferredAthlete: "lawton",
@@ -61,6 +68,7 @@ const defaultState: PersistedState = {
     },
     cycle: cycleSettings
   },
+  appliedResetKeys: [],
   householdSession: null
 };
 
@@ -122,9 +130,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const householdSession = state.householdSession ?? null;
   const householdId = householdSession?.householdId ?? null;
   const householdJoinCode = householdSession?.joinCode ?? null;
+  const hasAppliedProgressReset = (state.appliedResetKeys ?? []).includes(progressReset.resetKey);
 
   useEffect(() => {
-    setState(loadState(defaultState));
+    const loadedState = loadState(defaultState);
+
+    setState(
+      loadedState.householdSession
+        ? loadedState
+        : applyProgressReset(loadedState, progressReset)
+    );
   }, []);
 
   useEffect(() => {
@@ -138,22 +153,38 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       try {
         setSyncStatus("syncing");
         setSyncError(null);
+        const shouldApplyReset = !hasAppliedProgressReset;
+
+        if (shouldApplyReset) {
+          await resetHouseholdProgressRequest({
+            householdId,
+            joinCode: householdJoinCode,
+            resetDate: progressReset.resetDate
+          });
+        }
+
         const snapshot = await fetchHouseholdSnapshot({
           householdId,
           joinCode: householdJoinCode
         });
 
-        setState((current) => ({
-          ...current,
-          completions: snapshot.completions,
-          redemptions: snapshot.redemptions,
-          settings: snapshot.settings ?? current.settings,
-          householdSession:
-            current.householdSession?.householdId === snapshot.household.householdId &&
-            current.householdSession?.joinCode === snapshot.household.joinCode
-              ? current.householdSession
-              : snapshot.household
-        }));
+        setState((current) => {
+          const hydratedState = {
+            ...current,
+            completions: snapshot.completions,
+            redemptions: snapshot.redemptions,
+            settings: snapshot.settings ?? current.settings,
+            householdSession:
+              current.householdSession?.householdId === snapshot.household.householdId &&
+              current.householdSession?.joinCode === snapshot.household.joinCode
+                ? current.householdSession
+                : snapshot.household
+          };
+
+          return shouldApplyReset
+            ? applyProgressReset(hydratedState, progressReset)
+            : hydratedState;
+        });
         setSyncStatus("shared");
       } catch (error) {
         setSyncStatus("error");
@@ -162,7 +193,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     }
 
     void hydrateRemoteState();
-  }, [householdId, householdJoinCode]);
+  }, [hasAppliedProgressReset, householdId, householdJoinCode]);
 
   useEffect(() => {
     saveState(state);

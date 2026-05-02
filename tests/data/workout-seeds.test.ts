@@ -98,4 +98,23 @@ describe("workout seeds", () => {
       type: "race"
     });
   });
+
+  it("keeps spotter-dependent lifts unchanged before 2026-05-02 and replaces them afterward", () => {
+    const preResetLawton = lawtonWorkouts.find((workout) => workout.date === "2026-04-28");
+    const postResetExerciseNames = [...lawtonWorkouts, ...katyWorkouts]
+      .filter((workout) => workout.date >= "2026-05-02")
+      .flatMap((workout) => workout.mainWork.map((block) => block.name));
+
+    expect(preResetLawton?.mainWork.map((block) => block.name)).toContain("Bench Press");
+    expect(postResetExerciseNames).toContain("Dumbbell Bench Press");
+    expect(postResetExerciseNames).toContain("Neutral-Grip Dumbbell Bench Press");
+    expect(postResetExerciseNames).toContain("Leg Press");
+    expect(postResetExerciseNames).toContain("Heavy Goblet Squat");
+    expect(postResetExerciseNames).toContain("Overhead Press");
+    expect(postResetExerciseNames).not.toContain("Bench Press");
+    expect(postResetExerciseNames).not.toContain("Close-Grip Bench Press");
+    expect(postResetExerciseNames).not.toContain("Back Squat");
+    expect(postResetExerciseNames).not.toContain("Front Squat");
+    expect(postResetExerciseNames).not.toContain("Squat");
+  });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAppStore } from "@/lib/store";
 import { AppShell } from "@/components/layout/app-shell";
@@ -9,6 +9,7 @@ import { PlanWeekCard } from "@/components/plan/plan-week-card";
 
 export default function PlanPage() {
   const { workouts, currentDate } = useAppStore();
+  const focusedWeekRef = useRef<HTMLDivElement | null>(null);
   const weeks = useMemo(
     () =>
       Array.from({ length: Math.ceil(workouts.length / 7) }, (_, index) =>
@@ -60,6 +61,10 @@ export default function PlanPage() {
       Math.max(focusedWeekIndex - 1, 0),
       Math.min(focusedWeekIndex + 1, Math.max(weeks.length - 1, 0))
     ]);
+    focusedWeekRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
   }
 
   function toggleWeek(index: number) {
@@ -77,17 +82,18 @@ export default function PlanPage() {
           onJumpToCurrentWeek={handleJumpToCurrentWeek}
         />
         {weeks.map((week, index) => (
-          <PlanWeekCard
-            key={`week-${index + 1}`}
-            week={week}
-            weekIndex={index}
-            isFocused={index === focusedWeekIndex}
-            isNear={Math.abs(index - focusedWeekIndex) <= 1}
-            isExpanded={expandedWeeks.includes(index)}
-            selectedDate={selectedDate}
-            onToggleWeek={() => toggleWeek(index)}
-            onSelectDate={handleSelectDate}
-          />
+          <div key={`week-${index + 1}`} ref={index === focusedWeekIndex ? focusedWeekRef : undefined}>
+            <PlanWeekCard
+              week={week}
+              weekIndex={index}
+              isFocused={index === focusedWeekIndex}
+              isNear={Math.abs(index - focusedWeekIndex) <= 1}
+              isExpanded={expandedWeeks.includes(index)}
+              selectedDate={selectedDate}
+              onToggleWeek={() => toggleWeek(index)}
+              onSelectDate={handleSelectDate}
+            />
+          </div>
         ))}
       </div>
     </AppShell>

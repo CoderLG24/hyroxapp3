@@ -20,9 +20,57 @@ const PLAN_END = new Date("2026-09-18T12:00:00Z");
 const WEEK_26_START = new Date("2026-09-07T12:00:00Z");
 const cycleYellow = "Yellow readiness: reduce volume 15-25% or swap intervals for tempo.";
 const cycleRed = "Red readiness: switch to easy aerobic work, upper body, mobility, or rest.";
+const soloTrainingPivotStart = "2026-05-02";
+
+const exerciseReplacements: Record<string, string> = {
+  "Bench Press": "Dumbbell Bench Press",
+  "Close-Grip Bench Press": "Neutral-Grip Dumbbell Bench Press",
+  "Back Squat": "Leg Press",
+  "Front Squat": "Heavy Goblet Squat",
+  Squat: "Heavy Goblet Squat"
+};
+
+const phraseReplacements = [
+  ["Close-Grip Bench Press", "Neutral-Grip Dumbbell Bench Press"],
+  ["Bench Press", "Dumbbell Bench Press"],
+  ["Back Squat", "Leg Press"],
+  ["Front Squat", "Heavy Goblet Squat"]
+] as const;
 
 function toIso(date: Date) {
   return format(date, "yyyy-MM-dd");
+}
+
+function replaceWorkoutCopy(value: string) {
+  return phraseReplacements.reduce(
+    (current, [from, to]) => current.replaceAll(from, to),
+    value
+  );
+}
+
+function applySoloTrainingPivot(workout: WorkoutDay): WorkoutDay {
+  if (workout.date < soloTrainingPivotStart) {
+    return workout;
+  }
+
+  return {
+    ...workout,
+    title: replaceWorkoutCopy(workout.title),
+    description: replaceWorkoutCopy(workout.description),
+    warmup: workout.warmup.map(replaceWorkoutCopy),
+    mainWork: workout.mainWork.map((block) => ({
+      ...block,
+      name: exerciseReplacements[block.name] ?? block.name,
+      notes: block.notes ? replaceWorkoutCopy(block.notes) : undefined
+    })),
+    conditioning: workout.conditioning.map((block) => ({
+      ...block,
+      name: replaceWorkoutCopy(block.name),
+      notes: block.notes ? replaceWorkoutCopy(block.notes) : undefined
+    })),
+    cooldown: workout.cooldown.map(replaceWorkoutCopy),
+    cycleAwareNotes: workout.cycleAwareNotes?.map(replaceWorkoutCopy)
+  };
 }
 
 function templateFromWorkout(workout: WorkoutDay): WorkoutTemplate {
@@ -1001,7 +1049,7 @@ export function generateLawtonWorkouts() {
     throw new Error(`Lawton workouts length mismatch: expected ${expectedDates.length}, received ${workouts.length}`);
   }
 
-  return workouts;
+  return workouts.map(applySoloTrainingPivot);
 }
 
 export function generateKatyWorkouts() {
@@ -1012,5 +1060,5 @@ export function generateKatyWorkouts() {
     throw new Error(`Katy workouts length mismatch: expected ${expectedDates.length}, received ${workouts.length}`);
   }
 
-  return workouts;
+  return workouts.map(applySoloTrainingPivot);
 }

@@ -170,3 +170,29 @@ export async function createRewardRedemption(householdId: string, redemption: Re
     throw error;
   }
 }
+
+export async function deleteCompletionsFromDate(householdId: string, fromDate: string) {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("daily_completions")
+    .delete()
+    .eq("household_id", householdId)
+    .gte("date", fromDate);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function deleteRedemptionsFromDate(householdId: string, fromDate: string) {
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase
+    .from("reward_redemptions")
+    .delete()
+    .eq("household_id", householdId)
+    .gte("redeemed_on", `${fromDate}T00:00:00.000Z`);
+
+  if (error) {
+    throw error;
+  }
+}

@@ -21,10 +21,36 @@ export interface PersistedState {
   completions: Record<string, DailyCompletion>;
   redemptions: RewardRedemption[];
   settings: AppSettings;
+  appliedResetKeys?: string[];
   householdSession?: HouseholdSession | null;
 }
 
 const STORAGE_KEY = "hyrox-couple-v1";
+
+export function applyProgressReset(
+  state: PersistedState,
+  config: {
+    resetDate: string;
+    resetKey: string;
+  }
+): PersistedState {
+  const appliedResetKeys = state.appliedResetKeys ?? [];
+
+  if (appliedResetKeys.includes(config.resetKey)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    completions: Object.fromEntries(
+      Object.entries(state.completions).filter(([, completion]) => completion.date < config.resetDate)
+    ),
+    redemptions: state.redemptions.filter(
+      (redemption) => redemption.redeemedOn.slice(0, 10) < config.resetDate
+    ),
+    appliedResetKeys: [...appliedResetKeys, config.resetKey]
+  };
+}
 
 export function createEmptyGoals() {
   return {
@@ -68,6 +94,7 @@ export function loadState(fallback: PersistedState): PersistedState {
       completions: parsed.completions ?? fallback.completions,
       redemptions: parsed.redemptions ?? fallback.redemptions,
       settings: parsed.settings ?? fallback.settings,
+      appliedResetKeys: parsed.appliedResetKeys ?? fallback.appliedResetKeys ?? [],
       householdSession: parsed.householdSession ?? fallback.householdSession ?? null
     };
   } catch {

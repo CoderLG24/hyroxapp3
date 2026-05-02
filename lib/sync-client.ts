@@ -102,3 +102,19 @@ export async function createRewardRedemptionRequest(input: {
 
   await readJson<{ ok: true }>(response);
 }
+
+export async function resetHouseholdProgressRequest(input: {
+  householdId: string;
+  joinCode: string;
+  resetDate: string;
+}) {
+  const response = await fetch("/api/household/reset", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
+
+  await readJson<{ ok: true }>(response);
+}

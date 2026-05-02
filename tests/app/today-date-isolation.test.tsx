@@ -117,5 +117,6 @@ describe("today date isolation", () => {
     expect(screen.getByText(/today's mission/i)).toBeInTheDocument();
     expect(screen.getByText(/march 17, 2026/i)).toBeInTheDocument();
     expect(screen.getByText(/march workout/i)).toBeInTheDocument();
+    expect(screen.queryByText(/wearable recovery/i)).not.toBeInTheDocument();
   });
 });
