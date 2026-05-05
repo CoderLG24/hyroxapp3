@@ -1,8 +1,12 @@
 "use client";
 
-import { Dumbbell, Flame, Snowflake } from "lucide-react";
+import { CheckCircle2, Dumbbell, Flame, Snowflake } from "lucide-react";
 
 import { Panel } from "@/components/ui/panel";
+import { goalDefinitions } from "@/data/goals";
+import { useAppStore } from "@/lib/store";
+import { calculateDailyPoints } from "@/lib/scoring";
+import { cn } from "@/lib/utils";
 import type { WorkoutDay } from "@/lib/types";
 
 function InlineList({ title, items }: { title: string; items: string[] }) {
@@ -25,6 +29,11 @@ function InlineList({ title, items }: { title: string; items: string[] }) {
 }
 
 export function PlanWorkoutInline({ workout }: { workout: WorkoutDay }) {
+  const { athleteId, currentDate, getCompletionForDate, toggleGoal } = useAppStore();
+  const isPastDate = workout.date < currentDate;
+  const completion = getCompletionForDate(workout.date, athleteId);
+  const dailyPoints = calculateDailyPoints(completion);
+
   return (
     <Panel className="mt-4 border-sky-400/15 bg-slate-950/55 p-4">
       <p className="text-sm text-slate-300">{workout.description}</p>
@@ -100,6 +109,53 @@ export function PlanWorkoutInline({ workout }: { workout: WorkoutDay }) {
           ) : null}
         </div>
       </div>
+
+      {isPastDate ? (
+        <div className="mt-4 space-y-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.07] p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-emerald-100/70">Mark completed</p>
+              <p className="mt-1 text-sm text-slate-200">Update {workout.date} if you forgot to log an item.</p>
+            </div>
+            <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-100">
+              {dailyPoints} pts
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            {goalDefinitions.map((goal) => {
+              const checked = completion.goals[goal.key];
+
+              return (
+                <button
+                  key={goal.key}
+                  type="button"
+                  onClick={() => toggleGoal(goal.key, athleteId, workout.date)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition",
+                    checked
+                      ? "border-emerald-400/30 bg-emerald-400/12 text-white"
+                      : "border-white/10 bg-white/[0.03] text-slate-200 hover:border-white/20 hover:bg-white/[0.06]"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-2xl border",
+                      checked ? "border-emerald-400/30 bg-emerald-400/15 text-emerald-100" : "border-white/10 bg-slate-900/60 text-slate-500"
+                    )}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="font-medium">{goal.label}</p>
+                    <p className="text-sm text-slate-400">{goal.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </Panel>
   );
 }

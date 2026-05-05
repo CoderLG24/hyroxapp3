@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import PlanPage from "@/app/plan/page";
 
+const toggleGoal = vi.fn();
+
 vi.mock("@/components/layout/app-shell", () => ({
   AppShell: ({ children, title }: { children: React.ReactNode; title: string }) => (
     <div>
@@ -14,10 +16,12 @@ vi.mock("@/components/layout/app-shell", () => ({
 
 vi.mock("@/lib/store", () => ({
   useAppStore: () => ({
+    athleteId: "lawton",
     currentDate: "2026-06-16",
     workouts: [
       {
         date: "2026-06-15",
+        athleteId: "lawton",
         title: "Upper Strength + Run Work",
         type: "mixed",
         description: "Upper-body strength paired with running intervals.",
@@ -29,6 +33,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-16",
+        athleteId: "lawton",
         title: "Hyrox Circuit",
         type: "hyrox",
         description: "Structured station work.",
@@ -40,6 +45,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-17",
+        athleteId: "lawton",
         title: "Rest Day",
         type: "rest",
         description: "Full rest day with optional walking and light mobility.",
@@ -51,6 +57,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-18",
+        athleteId: "lawton",
         title: "Tempo Run",
         type: "run",
         description: "Tempo intervals.",
@@ -62,6 +69,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-19",
+        athleteId: "lawton",
         title: "Rest Day",
         type: "rest",
         description: "Rest.",
@@ -73,6 +81,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-20",
+        athleteId: "lawton",
         title: "Carry Day",
         type: "strength",
         description: "Carries and upper body.",
@@ -84,6 +93,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-21",
+        athleteId: "lawton",
         title: "Hyrox CS4 Class",
         type: "hyrox",
         description: "Class day.",
@@ -95,6 +105,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-22",
+        athleteId: "lawton",
         title: "Lower Strength",
         type: "strength",
         description: "Lower-body day.",
@@ -106,6 +117,7 @@ vi.mock("@/lib/store", () => ({
       },
       {
         date: "2026-06-23",
+        athleteId: "lawton",
         title: "Upper Strength + Run Work",
         type: "mixed",
         description: "Another upper day.",
@@ -116,11 +128,45 @@ vi.mock("@/lib/store", () => ({
         isRestDay: false
       }
     ],
-    focusDate: "2026-06-16"
+    focusDate: "2026-06-16",
+    toggleGoal,
+    getCompletionForDate: (date: string) => ({
+      date,
+      athleteId: "lawton",
+      goals: {
+        scheduled_workout_complete: date === "2026-06-15",
+        eat_at_home: false,
+        protein_target_hit: false,
+        hydration_target_hit: false,
+        mobility_complete: false,
+        step_goal_hit: false
+      }
+    })
   })
 }));
 
 describe("PlanPage", () => {
+  it("shows a past-day checklist in Plan and toggles specific items for that date", () => {
+    toggleGoal.mockClear();
+    render(<PlanPage />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /2026-06-15/i })[1]);
+
+    expect(screen.getByText(/mark completed/i)).toBeInTheDocument();
+    expect(screen.getByText(/complete scheduled workout/i)).toBeInTheDocument();
+    expect(screen.getByText(/eat at home/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /eat at home/i }));
+
+    expect(toggleGoal).toHaveBeenCalledWith("eat_at_home", "lawton", "2026-06-15");
+  });
+
+  it("does not show the backfill checklist for the current focused date", () => {
+    render(<PlanPage />);
+
+    expect(screen.queryByText(/mark completed/i)).not.toBeInTheDocument();
+  });
+
   it("anchors the plan around the focused date and lets a day card expand and collapse inline", () => {
     render(<PlanPage />);
 

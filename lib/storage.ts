@@ -40,6 +40,17 @@ export function applyProgressReset(
     return state;
   }
 
+  const hasLaterLoggedActivity =
+    Object.values(state.completions).some((completion) => completion.date > config.resetDate) ||
+    state.redemptions.some((redemption) => redemption.redeemedOn.slice(0, 10) > config.resetDate);
+
+  if (hasLaterLoggedActivity) {
+    return {
+      ...state,
+      appliedResetKeys: [...appliedResetKeys, config.resetKey]
+    };
+  }
+
   return {
     ...state,
     completions: Object.fromEntries(

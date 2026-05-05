@@ -82,6 +82,7 @@ interface AppStoreValue {
   partnerWorkout: ReturnType<typeof getWorkoutForDate>;
   completion: DailyCompletion;
   partnerCompletion: DailyCompletion;
+  getCompletionForDate: (date: string, athleteId?: AthleteId) => DailyCompletion;
   toggleGoal: (goal: GoalKey, athleteId?: AthleteId, date?: string) => void;
   updateCompletionMeta: (patch: Partial<DailyCompletion>, athleteId?: AthleteId, date?: string) => void;
   dailyPoints: number;
@@ -240,6 +241,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       partnerWorkout,
       completion,
       partnerCompletion,
+      getCompletionForDate: (targetDate, targetAthlete = athleteId) =>
+        getCompletionFromState(state.completions, targetAthlete, targetDate),
       toggleGoal: (goal, targetAthlete = athleteId, targetDate = currentDate) => {
         const key = getStorageKey(targetDate, targetAthlete);
         const existing = state.completions[key];
